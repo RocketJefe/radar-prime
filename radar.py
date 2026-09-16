@@ -1,35 +1,31 @@
 import os
 import time
-import json
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 import requests
-import websocket
 
 BOT_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")  # Ej: @ATLAS1CHANNEL
-TG_API = f"https://api.telegram.org/bot{BOT_TOKEN}"
+CHANNEL_ID = os.getenv("TELEGRAM_CHANNEL_ID")
+PORT = int(os.getenv("PORT", 10000))
 
-# Configuración técnica
-RSI_OVERSOLD = 25.0
-RSI_OVERBOUGHT = 75.0
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Radar Prime Active")
 
-def send_alert(active, action, rsi_val):
-    msg = (
-        f"⚡️ ALERTA GHOST STRIKE ⚡️\n"
-        f"ACTIVO: {active}\n"
-        f"ACCION: {action}\n"
-        f"EXPIRACION: 30s\n"
-        f"RSI: {rsi_val:.1f}"
-    )
-    print(f"[RADAR] Disparando alerta al canal: {action} {active}")
-    requests.post(f"{TG_API}/sendMessage", json={"chat_id": CHANNEL_ID, "text": msg}, timeout=5)
+def run_health_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    server.serve_forever()
 
 def scan_loop():
-    print("[RADAR] Radar Prime iniciado. Escaneando par EURUSD...")
-    # Ciclo de supervisión de mercado
+    print("[RADAR] Radar Prime iniciado. Escaneando pares en Frankfurt...")
     while True:
-        # Aquí el scanner analiza precios/velas.
-        # Simulador de guardia técnica / heartbeat:
+        # Lógica de escaneo continuo
         time.sleep(60)
 
 if __name__ == "__main__":
+    # Servidor de salud para Render
+    t = threading.Thread(target=run_health_server, daemon=True)
+    t.start()
     scan_loop()
